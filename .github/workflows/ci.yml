@@ -56,7 +56,7 @@ jobs:
       run: npm run prebuild-$BUILD_GROUP
       shell: bash
     - name: Fix prebuild file names
-      if: ${{ (matrix.build-group == 'linux-x64') || (matrix.build-group == 'linux-arm64') }}
+      if: ${{ matrix.build-group == 'linux-x64'}}
       run: |
         for f in prebuilds/*/@evgenonyskiv+robotjs.node; do
           mv "$f" "$(dirname "$f")/napi-v3.node"
