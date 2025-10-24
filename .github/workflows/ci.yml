@@ -58,6 +58,7 @@ jobs:
     - name: Fix prebuild file names
       if: ${{ (matrix.build-group == 'linux-x64') || (matrix.build-group == 'linux-arm64') }}
       run: |
+        shopt -s nullglob
         for f in prebuilds/*/@evgenonyskiv+robotjs.node; do
           mv "$f" "$(dirname "$f")/napi-v3.node"
         done
