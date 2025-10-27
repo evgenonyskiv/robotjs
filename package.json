@@ -15,8 +15,7 @@
     "prebuild-linux-x64": "npx prebuildify --napi --strip --tag-libc",
     "prebuild-linux-arm64": "prebuildify --napi --strip",
     "prebuild-win32-x86": "prebuildify --napi --strip",
-    "prebuild-win32-x64": "prebuildify --napi --strip",
-    "prebuild-win32-arm64": "prebuildify --napi --strip"
+    "prebuild-win32-x64": "prebuildify --napi --strip"
   },
   "repository": {
     "type": "git",
