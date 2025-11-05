@@ -12,11 +12,11 @@
         "CLANG_CXX_LIBRARY": "libc++",
         "MACOSX_DEPLOYMENT_TARGET": "10.13"
       },
-      "msvs_settings": {
-        "VCCLCompilerTool": { "ExceptionHandling": 1 }
-      },
-      "include_dirs": [
-        "<!(node -p \"require('node-addon-api').include_dir\")"
+      'include_dirs': [
+        '<!(node -p "require(\'node-addon-api\').include")'
+      ],
+      'dependencies': [
+        '<!(node -p "require(\'node-addon-api\').gyp")'
       ],
       "conditions": [
         [
