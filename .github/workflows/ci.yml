@@ -37,32 +37,58 @@ jobs:
           - os: windows-latest
             arch: x64
             build-group: win32-x64
+
+          - os: ubuntu-22.04
+            arch: x64
+            build-group: electron-linux-x64
+          - os: ubuntu-22.04-arm
+            arch: arm64
+            build-group: electron-linux-arm64
+          - os: macos-13
+            arch: x64
+            build-group: electron-darwin-universal
+          - os: windows-latest
+            arch: x64
+            build-group: electron-win32-x64
+
     env:
       BUILD_GROUP: ${{ matrix.build-group }}
+      ELECTRON_TARGET: 32.1.2   # версия Electron, под которую собираем
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           architecture: ${{ matrix.arch }}
+
       - name: Install linux dependencies
-        if: ${{ (matrix.build-group == 'linux-x64') || (matrix.build-group == 'linux-arm64') }}
-        run: sudo apt-get install libxtst-dev libpng++-dev
+        if: ${{ contains(matrix.build-group, 'linux') }}
+        run: sudo apt-get install -y libxtst-dev libpng++-dev
+
       - run: node -p "process.versions.modules"
       - run: npm ci
-      - name: Prebuildify
+
+      # Node.js prebuilds
+      - name: Prebuildify (Node.js)
+        if: ${{ !startsWith(matrix.build-group, 'electron-') }}
         run: |
-          if [[ "$BUILD_GROUP" == darwin-universal ]]; then
+          if [[ "$BUILD_GROUP" == "darwin-universal" ]]; then
             npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip --arch x64+arm64
           else
             npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip
           fi
         shell: bash
-      - uses: actions/upload-artifact@v4
-        with:
-          name: prebuilds-${{ matrix.build-group }}
-          path: prebuilds/
-          if-no-files-found: error
+
+      # Electron rebuild
+      - name: Electron Rebuild
+        if: ${{ startsWith(matrix.build-group, 'electron-') }}
+        run: |
+          npx electron-rebuild --version $ELECTRON_TARGET
+          mkdir -p prebuilds/$BUILD_GROUP
+          cp node_modules/*/build/Release/*.node prebuilds/$BUILD_GROUP/ || true
+          echo "Собранные бинарники для Electron сложены в prebuilds/$BUILD_GROUP"
+        shell: bash
 
   publish:
     name: Publish to npm
