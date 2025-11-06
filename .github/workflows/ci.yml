@@ -77,6 +77,12 @@ jobs:
             npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip --arch x64+arm64
           elif [[ "$BUILD_GROUP" == linux-* ]]; then
             npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip --tag-libc
+            # Дополнительно создаём нетегированный файл, чтобы node-gyp-build точно нашёл
+            for d in prebuilds/linux-*; do
+              if ls "$d"/node.napi.*.node >/dev/null 2>&1; then
+                cp "$d"/node.napi.*.node "$d"/node.napi.node || true
+              fi
+            done
           else
             npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip
           fi

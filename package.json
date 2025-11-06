@@ -42,6 +42,13 @@
   "author": "Jason Stallings",
   "license": "MIT",
   "gypfile": true,
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "binding.gyp",
+    "prebuilds/**",
+    "src/**"
+  ],
   "binary": {
     "napi_versions": [
       3,
