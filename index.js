@@ -1,4 +1,33 @@
-var robotjs = require('node-gyp-build')(__dirname);
+var path = require('path');
+var fs = require('fs');
+var robotjs;
+try {
+    robotjs = require('node-gyp-build')(__dirname);
+} catch (e) {
+    var platform = process.platform;
+    var arch = process.arch;
+    var baseDir = path.join(__dirname, 'prebuilds', platform + '-' + arch);
+    var candidates = [
+        'node.napi.node',
+        'node.napi.glibc.node',
+        'node.napi.musl.node'
+    ];
+    try {
+        var libc;
+        try { libc = require('detect-libc').familySync(); } catch (_) { libc = null; }
+        if (libc === 'glibc') candidates.unshift('node.napi.glibc.node');
+        if (libc === 'musl') candidates.unshift('node.napi.musl.node');
+    } catch (_) {}
+    var loaded = false;
+    for (var i = 0; i < candidates.length && !loaded; i++) {
+        var candidatePath = path.join(baseDir, candidates[i]);
+        if (fs.existsSync(candidatePath)) {
+            robotjs = require(candidatePath);
+            loaded = true;
+        }
+    }
+    if (!loaded) throw e;
+}
 
 module.exports = robotjs;
 
