@@ -74,9 +74,9 @@ jobs:
         if: ${{ !startsWith(matrix.build-group, 'electron-') }}
         run: |
           if [[ "$BUILD_GROUP" == "darwin-universal" ]]; then
-            npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip --arch x64+arm64
+            npx prebuildify --napi --strip --arch x64+arm64
           elif [[ "$BUILD_GROUP" == linux-* ]]; then
-            npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip --tag-libc
+            npx prebuildify --napi --strip --tag-libc
             # Дополнительно создаём нетегированный файл, чтобы node-gyp-build точно нашёл
             for d in prebuilds/linux-*; do
               if ls "$d"/node.napi.*.node >/dev/null 2>&1; then
@@ -84,7 +84,7 @@ jobs:
               fi
             done
           else
-            npx prebuildify --napi --napi-versions=3,4,5,6,7,8,9 --strip
+            npx prebuildify --napi --strip
           fi
           echo "Содержимое prebuilds после сборки:"
           ls -R prebuilds || true
