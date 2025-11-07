@@ -6,11 +6,20 @@ try {
 } catch (e) {
     var platform = process.platform;
     var arch = process.arch;
-    var baseDir = path.join(__dirname, 'prebuilds', platform + '-' + arch);
+    var searchDirs = [path.join(__dirname, 'prebuilds', platform + '-' + arch)];
+    // Handle macOS universal build folder name
+    if (platform === 'darwin' && arch === 'arm64') {
+        searchDirs.push(path.join(__dirname, 'prebuilds', 'darwin-x64+arm64'));
+    }
+    if (platform === 'darwin' && arch === 'x64') {
+        searchDirs.push(path.join(__dirname, 'prebuilds', 'darwin-x64+arm64'));
+    }
     var candidates = [
         'node.napi.node',
         'node.napi.glibc.node',
-        'node.napi.musl.node'
+        'node.napi.musl.node',
+        'robotjs.node',
+        'robotjs.napi.node'
     ];
     try {
         var libc;
@@ -19,14 +28,36 @@ try {
         if (libc === 'musl') candidates.unshift('node.napi.musl.node');
     } catch (_) {}
     var loaded = false;
-    for (var i = 0; i < candidates.length && !loaded; i++) {
-        var candidatePath = path.join(baseDir, candidates[i]);
-        if (fs.existsSync(candidatePath)) {
-            robotjs = require(candidatePath);
-            loaded = true;
+    for (var di = 0; di < searchDirs.length && !loaded; di++) {
+        var baseDir = searchDirs[di];
+        // Сначала пробуем стандартные имена
+        for (var i = 0; i < candidates.length && !loaded; i++) {
+            var candidatePath = path.join(baseDir, candidates[i]);
+            if (fs.existsSync(candidatePath)) {
+                robotjs = require(candidatePath);
+                loaded = true;
+            }
+        }
+        // Если не нашли, ищем любой .node файл в директории
+        if (!loaded && fs.existsSync(baseDir)) {
+            try {
+                var files = fs.readdirSync(baseDir);
+                for (var j = 0; j < files.length && !loaded; j++) {
+                    if (files[j].endsWith('.node')) {
+                        var filePath = path.join(baseDir, files[j]);
+                        robotjs = require(filePath);
+                        loaded = true;
+                    }
+                }
+            } catch (readErr) {
+                // Игнорируем ошибки чтения директории
+            }
         }
     }
-    if (!loaded) throw e;
+    if (!loaded) {
+        console.error('Failed to load robotjs binary. Searched in:', searchDirs);
+        throw e;
+    }
 }
 
 module.exports = robotjs;

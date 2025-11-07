@@ -75,12 +75,30 @@ jobs:
         run: |
           if [[ "$BUILD_GROUP" == "darwin-universal" ]]; then
             npx prebuildify --napi --strip --arch x64+arm64
+            # Нормализуем universal бинарник под оба каталога, чтобы рантайм нашёл его
+            if [ -d prebuilds/darwin-x64+arm64 ]; then
+              mkdir -p prebuilds/darwin-x64 prebuilds/darwin-arm64
+              if ls prebuilds/darwin-x64+arm64/node.napi*.node >/dev/null 2>&1; then
+                for f in prebuilds/darwin-x64+arm64/node.napi*.node; do
+                  cp "$f" prebuilds/darwin-x64/node.napi.node || true
+                  cp "$f" prebuilds/darwin-arm64/node.napi.node || true
+                done
+              fi
+            fi
           elif [[ "$BUILD_GROUP" == linux-* ]]; then
             npx prebuildify --napi --strip --tag-libc
             # Дополнительно создаём нетегированный файл, чтобы node-gyp-build точно нашёл
             for d in prebuilds/linux-*; do
-              if ls "$d"/node.napi.*.node >/dev/null 2>&1; then
-                cp "$d"/node.napi.*.node "$d"/node.napi.node || true
+              if [ -d "$d" ]; then
+                # Копируем любой найденный .node файл как node.napi.node
+                for f in "$d"/*.node; do
+                  if [ -f "$f" ]; then
+                    cp "$f" "$d/node.napi.node" || true
+                    # Также создаём robotjs.node для совместимости
+                    cp "$f" "$d/robotjs.node" || true
+                    break
+                  fi
+                done
               fi
             done
           else
