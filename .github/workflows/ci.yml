@@ -78,12 +78,14 @@ jobs:
             # Нормализуем universal бинарник под оба каталога, чтобы рантайм нашёл его
             if [ -d prebuilds/darwin-x64+arm64 ]; then
               mkdir -p prebuilds/darwin-x64 prebuilds/darwin-arm64
-              if ls prebuilds/darwin-x64+arm64/node.napi*.node >/dev/null 2>&1; then
-                for f in prebuilds/darwin-x64+arm64/node.napi*.node; do
+              for f in prebuilds/darwin-x64+arm64/*.node; do
+                if [ -f "$f" ]; then
                   cp "$f" prebuilds/darwin-x64/node.napi.node || true
+                  cp "$f" prebuilds/darwin-x64/robotjs.node || true
                   cp "$f" prebuilds/darwin-arm64/node.napi.node || true
-                done
-              fi
+                  cp "$f" prebuilds/darwin-arm64/robotjs.node || true
+                fi
+              done
             fi
           elif [[ "$BUILD_GROUP" == linux-* ]]; then
             npx prebuildify --napi --strip --tag-libc
@@ -103,6 +105,18 @@ jobs:
             done
           else
             npx prebuildify --napi --strip
+            # Для Windows и других платформ также создаём копии с правильными именами
+            for d in prebuilds/*; do
+              if [ -d "$d" ] && [[ ! "$d" =~ darwin-x64+arm64 ]] && [[ ! "$d" =~ linux-* ]]; then
+                for f in "$d"/*.node; do
+                  if [ -f "$f" ]; then
+                    cp "$f" "$d/node.napi.node" || true
+                    cp "$f" "$d/robotjs.node" || true
+                    break
+                  fi
+                done
+              fi
+            done
           fi
           echo "Содержимое prebuilds после сборки:"
           ls -R prebuilds || true

@@ -19,13 +19,22 @@ try {
         'node.napi.glibc.node',
         'node.napi.musl.node',
         'robotjs.node',
-        'robotjs.napi.node'
+        'robotjs.napi.node',
+        '@evgenonyskiv+robotjs.node',
+        '@evgenonyskiv+robotjs.glibc.node',
+        '@evgenonyskiv+robotjs.musl.node'
     ];
     try {
         var libc;
         try { libc = require('detect-libc').familySync(); } catch (_) { libc = null; }
-        if (libc === 'glibc') candidates.unshift('node.napi.glibc.node');
-        if (libc === 'musl') candidates.unshift('node.napi.musl.node');
+        if (libc === 'glibc') {
+            candidates.unshift('node.napi.glibc.node');
+            candidates.unshift('@evgenonyskiv+robotjs.glibc.node');
+        }
+        if (libc === 'musl') {
+            candidates.unshift('node.napi.musl.node');
+            candidates.unshift('@evgenonyskiv+robotjs.musl.node');
+        }
     } catch (_) {}
     var loaded = false;
     for (var di = 0; di < searchDirs.length && !loaded; di++) {
