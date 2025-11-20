@@ -66,6 +66,12 @@ jobs:
         if: ${{ contains(matrix.build-group, 'linux') }}
         run: sudo apt-get install -y libx11-dev libxext-dev libxtst-dev libpng++-dev
 
+      - name: Install Windows build tools
+        if: runner.os == 'Windows'
+        run: |
+          npm install --global windows-build-tools --vs2019
+          npm install --global node-gyp
+
       - run: node -p "process.versions.modules"
       - run: npm ci
 
