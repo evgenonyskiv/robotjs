@@ -44,9 +44,14 @@ jobs:
           - os: ubuntu-22.04-arm
             arch: arm64
             build-group: electron-linux-arm64
+          # macOS x64
           - os: macos-13
             arch: x64
-            build-group: electron-darwin-universal
+            build-group: electron-darwin-x64
+          # macOS arm64
+          - os: macos-14
+            arch: arm64
+            build-group: electron-darwin-arm64
           - os: windows-latest
             arch: x64
             build-group: electron-win32-x64
