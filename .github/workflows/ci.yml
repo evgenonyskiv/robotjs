@@ -22,31 +22,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            arch: x64
-            build-group: linux-x64
-          - os: ubuntu-22.04-arm
-            arch: arm64
-            build-group: linux-arm64
-          - os: macos-latest
-            arch: x64
-            build-group: darwin-universal
           - os: windows-latest
             arch: x86
             build-group: win32-x86
           - os: windows-latest
             arch: x64
             build-group: win32-x64
-
-          - os: ubuntu-22.04
-            arch: x64
-            build-group: electron-linux-x64
-          - os: ubuntu-22.04-arm
-            arch: arm64
-            build-group: electron-linux-arm64
-          - os: macos-latest
-            arch: x64
-            build-group: electron-darwin-universal
           - os: windows-latest
             arch: x64
             build-group: electron-win32-x64
@@ -65,6 +46,12 @@ jobs:
       - name: Install linux dependencies
         if: ${{ contains(matrix.build-group, 'linux') }}
         run: sudo apt-get install -y libx11-dev libxext-dev libxtst-dev libpng++-dev
+
+      - name: Install Windows build tools
+        if: runner.os == 'Windows'
+        run: |
+          npm install --global windows-build-tools --vs2019
+          npm install --global node-gyp
 
       - run: node -p "process.versions.modules"
       - run: npm ci
