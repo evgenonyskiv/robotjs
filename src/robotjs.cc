@@ -316,42 +316,6 @@ struct KeyNames
 
 static KeyNames key_names[] =
 {
-	{"a", 				K_A},
-	{"b",               K_B},
-	{"c",               K_C},
-	{"d",               K_D},
-	{"e",               K_E},
-	{"f",               K_F},
-	{"g",               K_G},
-	{"h",               K_H},
-	{"i",               K_I},
-	{"j",               K_J},
-	{"k",               K_K},
-	{"l",               K_L},
-	{"m",               K_M},
-	{"n",               K_N},
-	{"o",               K_O},
-	{"p",               K_P},
-	{"q",               K_Q},
-	{"r",               K_R},
-	{"s",               K_S},
-	{"t",               K_T},
-	{"u",               K_U},
-	{"v",               K_V},
-	{"w",               K_W},
-	{"x",               K_X},
-	{"y",               K_Y},
-	{"z",               K_Z},
-	{"0",               K_0},
-	{"1",               K_1},
-	{"2",               K_2},
-	{"3",               K_3},
-	{"4",               K_4},
-	{"5",               K_5},
-	{"6",               K_6},
-	{"7",               K_7},
-	{"8",               K_8},
-	{"9",               K_9},
 	{ "backspace",      K_BACKSPACE },
 	{ "delete",         K_DELETE },
 	{ "enter",          K_RETURN },
@@ -365,21 +329,6 @@ static KeyNames key_names[] =
 	{ "end",            K_END },
 	{ "pageup",         K_PAGEUP },
 	{ "pagedown",       K_PAGEDOWN },
-
-
-	{",",                 K_COMMA},
-	{".",                 K_PERIOD},
-	{"/",                 K_SLASH},
-
-	{";",                 K_SEMICOLON},
-	{"'",                 K_QUOTE},
-	{"[",                 K_LEFTBRACKET},
-	{"]",                 K_RIGHTBRACKET},
-	{"\\",                K_BACKSLASH},
-
-	{"-",                 K_MINUS},
-	{"=",                 K_EQUAL},
-	{"`",                 K_GRAVE},
 
 	{ "f1",             K_F1 },
 	{ "f2",             K_F2 },
@@ -462,6 +411,12 @@ static KeyNames key_names[] =
 int CheckKeyCodes(const char* k, MMKeyCode *key)
 {
 	if (!key) return -1;
+
+	if (strlen(k) == 1)
+	{
+		*key = keyCodeForChar(*k);
+		return 0;
+	}
 
 	*key = K_NOT_A_KEY;
 
