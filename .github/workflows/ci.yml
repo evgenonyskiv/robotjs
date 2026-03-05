@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           - arch: x64
-            build-group: electron-darwin-x64
+            build-group: electron-darwin-x64-2
 
           - arch: arm64
             build-group: electron-darwin-arm64
@@ -44,7 +44,6 @@ jobs:
             --target="$ELECTRON_TARGET" \
             --arch="${{ matrix.arch }}" \
             --dist-url=https://electronjs.org/headers \
-            --build-from-source
 
       - name: Find built .node files
         run: find ./build -name "*.node" 2>/dev/null || echo "Nothing found"
