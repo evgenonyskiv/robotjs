@@ -1,136 +1,59 @@
-name: CI
+name: Electron macOS builds
 
 on:
-  pull_request:
   push:
     branches:
       - master
-
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: write
-  id-token: write
+  pull_request:
 
 jobs:
-  build-other-platforms:
-    name: Build ${{ matrix.build-group }}
-    runs-on: ${{ matrix.os }}
+  build-electron-macos:
+    name: Build Electron ${{ matrix.build-group }}
+    runs-on: macos-14
+
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            arch: x64
-            build-group: linux-x64
-          - os: ubuntu-22.04-arm
-            arch: arm64
-            build-group: linux-arm64
-          - os: macos-13
-            arch: x64
-            build-group: darwin-universal
-          - os: windows-latest
-            arch: x86
-            build-group: win32-x86
-          - os: windows-latest
-            arch: x64
-            build-group: win32-x64
+          - arch: x64
+            build-group: electron-darwin-x64-2
 
-          - os: ubuntu-22.04
-            arch: x64
-            build-group: electron-linux-x64
-          - os: ubuntu-22.04-arm
-            arch: arm64
-            build-group: electron-linux-arm64
-          - os: macos-13
-            arch: x64
-            build-group: electron-darwin-universal
-          - os: windows-latest
-            arch: x64
-            build-group: electron-win32-x64
+          - arch: arm64
+            build-group: electron-darwin-arm64
 
     env:
+      ELECTRON_TARGET: 32.1.2
       BUILD_GROUP: ${{ matrix.build-group }}
-      ELECTRON_TARGET: 32.1.2   # версия Electron, под которую собираем
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-          architecture: ${{ matrix.arch }}
+          cache: npm
 
-      - name: Install linux dependencies
-        if: ${{ contains(matrix.build-group, 'linux') }}
-        run: sudo apt-get install -y libx11-dev libxext-dev libxtst-dev libpng++-dev
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
 
-      - run: node -p "process.versions.modules"
-      - run: npm ci
-
-      # Node.js prebuilds
-      - name: Prebuildify (Node.js)
-        if: ${{ !startsWith(matrix.build-group, 'electron-') }}
+      - name: Build from source via node-gyp (Electron headers)
         run: |
-          if [[ "$BUILD_GROUP" == "darwin-universal" ]]; then
-            npx prebuildify --napi --strip --arch x64+arm64
-            # Нормализуем universal бинарник под оба каталога, чтобы рантайм нашёл его
-            if [ -d prebuilds/darwin-x64+arm64 ]; then
-              mkdir -p prebuilds/darwin-x64 prebuilds/darwin-arm64
-              for f in prebuilds/darwin-x64+arm64/*.node; do
-                if [ -f "$f" ]; then
-                  cp "$f" prebuilds/darwin-x64/node.napi.node || true
-                  cp "$f" prebuilds/darwin-x64/robotjs.node || true
-                  cp "$f" prebuilds/darwin-arm64/node.napi.node || true
-                  cp "$f" prebuilds/darwin-arm64/robotjs.node || true
-                fi
-              done
-            fi
-          elif [[ "$BUILD_GROUP" == linux-* ]]; then
-            npx prebuildify --napi --strip --tag-libc
-            # Дополнительно создаём нетегированный файл, чтобы node-gyp-build точно нашёл
-            for d in prebuilds/linux-*; do
-              if [ -d "$d" ]; then
-                # Копируем любой найденный .node файл как node.napi.node
-                for f in "$d"/*.node; do
-                  if [ -f "$f" ]; then
-                    cp "$f" "$d/node.napi.node" || true
-                    # Также создаём robotjs.node для совместимости
-                    cp "$f" "$d/robotjs.node" || true
-                    break
-                  fi
-                done
-              fi
-            done
-          else
-            npx prebuildify --napi --strip
-            # Для Windows и других платформ также создаём копии с правильными именами
-            for d in prebuilds/*; do
-              if [ -d "$d" ] && [[ ! "$d" =~ darwin-x64+arm64 ]] && [[ ! "$d" =~ linux-* ]]; then
-                for f in "$d"/*.node; do
-                  if [ -f "$f" ]; then
-                    cp "$f" "$d/node.napi.node" || true
-                    cp "$f" "$d/robotjs.node" || true
-                    break
-                  fi
-                done
-              fi
-            done
-          fi
-          echo "Содержимое prebuilds после сборки:"
-          ls -R prebuilds || true
-        shell: bash
+          npx node-gyp rebuild \
+            --target="$ELECTRON_TARGET" \
+            --arch="${{ matrix.arch }}" \
+            --dist-url=https://electronjs.org/headers \
 
-      # Electron rebuild
-      - name: Electron Rebuild
-        if: ${{ startsWith(matrix.build-group, 'electron-') }}
+      - name: Find built .node files
+        run: find ./build -name "*.node" 2>/dev/null || echo "Nothing found"
+
+      - name: Copy prebuilds
         run: |
-          npx electron-rebuild --version $ELECTRON_TARGET
-          mkdir -p prebuilds/$BUILD_GROUP
-          cp build/Release/*.node prebuilds/$BUILD_GROUP/ || true
-          echo "Собранные бинарники для Electron сложены в prebuilds/$BUILD_GROUP"
-        shell: bash
+          mkdir -p "prebuilds/$BUILD_GROUP"
+          cp build/Release/*.node "prebuilds/$BUILD_GROUP/"
+          echo "=== Result ==="
+          file "prebuilds/$BUILD_GROUP/"*.node
 
       - name: Upload prebuilds
         uses: actions/upload-artifact@v4
@@ -138,29 +61,3 @@ jobs:
           name: prebuilds-${{ matrix.build-group }}
           path: prebuilds/**
           if-no-files-found: error
-
-  publish:
-    name: Publish to npm
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    needs: [build-other-platforms]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: prebuilds-*
-          path: prebuilds
-          merge-multiple: true
-      - uses: phips28/gh-action-bump-version@95099cd5edcdae43499bc94202b9d907e739e9c8
-        with:
-          tag-prefix: 'v'
-          version-type: 'patch'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

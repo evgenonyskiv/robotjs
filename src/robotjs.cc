@@ -329,6 +329,7 @@ static KeyNames key_names[] =
 	{ "end",            K_END },
 	{ "pageup",         K_PAGEUP },
 	{ "pagedown",       K_PAGEDOWN },
+
 	{ "f1",             K_F1 },
 	{ "f2",             K_F2 },
 	{ "f3",             K_F3 },
